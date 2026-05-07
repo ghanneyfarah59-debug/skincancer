@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result - Medical Cabinet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #333; }
+        .header h1 span { color: #667eea; }
+        .result-card {
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+        .result-header {
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .result-icon {
+            font-size: 70px;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 60px;
+        }
+        .result-icon.malignant { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); box-shadow: 0 10px 25px rgba(220, 53, 69, 0.3); }
+        .result-icon.benign { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3); }
+        .result-diagnostic { font-size: 36px; font-weight: bold; margin-bottom: 10px; }
+        .result-diagnostic.malignant { color: #dc3545; }
+        .result-diagnostic.benign { color: #28a745; }
+        .confidence-value { font-size: 48px; font-weight: bold; margin: 20px 0; }
+        .confidence-value.malignant { color: #dc3545; }
+        .confidence-value.benign { color: #28a745; }
+        .confidence-label { color: #666; font-size: 14px; }
+        .confidence-bar-container { width: 80%; margin: 20px auto; background: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; }
+        .confidence-bar { height: 100%; border-radius: 20px; transition: width 1s ease; width: 0%; }
+        .confidence-bar.malignant { background: linear-gradient(90deg, #dc3545, #ff6b6b); }
+        .confidence-bar.benign { background: linear-gradient(90deg, #28a745, #6fcf97); }
+        .result-body { padding: 30px 40px; }
+        .image-section { text-align: center; margin-bottom: 30px; }
+        .analyzed-image { max-width: 300px; max-height: 300px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 3px solid white; }
+        .interpretation {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .interpretation.malignant { border-left: 4px solid #dc3545; background: #fff5f5; }
+        .interpretation.benign { border-left: 4px solid #28a745; background: #f0fff4; }
+        .interpretation h3 { margin-bottom: 15px; }
+        .recommendation { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); font-size: 14px; }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            margin: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; transform: translateY(-2px); }
+        .btn-success { background: #28a745; color: white; }
+        .disclaimer {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 12px;
+            color: #856404;
+        }
+        @media (max-width: 600px) {
+            .result-header { padding: 25px; }
+            .result-diagnostic { font-size: 28px; }
+            .confidence-value { font-size: 36px; }
+            .result-body { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medical Cabinet <span>Dermatology</span></h1>
+            <a href="/dashboard" style="background: #f0f0f0; padding: 10px 20px; border-radius: 12px; text-decoration: none; color: #666;">← Dashboard</a>
+        </div>
+
+        <div class="result-card">
+            <div class="result-header">
+                <div class="result-icon {% if result == 'Malignant' %}malignant{% else %}benign{% endif %}">
+                    {% if result == 'Malignant' %}⚠️{% else %}✅{% endif %}
+                </div>
+                <div class="result-diagnostic {% if result == 'Malignant' %}malignant{% else %}benign{% endif %}">
+                    {% if result == 'Malignant' %}Diagnostic: MALIGNANT{% else %}Diagnostic: BENIGN{% endif %}
+                </div>
+                <div class="confidence-value {% if result == 'Malignant' %}malignant{% else %}benign{% endif %}">
+                    {{ prob }}%
+                </div>
+                <div class="confidence-label">IA Confidence Level</div>
+                <div class="confidence-bar-container">
+                    <div class="confidence-bar {% if result == 'Malignant' %}malignant{% else %}benign{% endif %}" style="width: {{ prob }}%"></div>
+                </div>
+            </div>
+
+            <div class="result-body">
+                {% if img %}
+                <div class="image-section">
+                    <h3>📸 Analyzed Lesion</h3>
+                    <img src="/{{ img }}" class="analyzed-image" alt="Analyzed lesion">
+                </div>
+                {% endif %}
+
+                <div class="interpretation {% if result == 'Malignant' %}malignant{% else %}benign{% endif %}">
+                    <h3>{% if result == 'Malignant' %}⚠️ Result Interpretation{% else %}✅ Result Interpretation{% endif %}</h3>
+                    {% if result == 'Malignant' %}
+                        <p><strong>Result: Suspicious lesion (Malignant)</strong></p>
+                        <p>The AI analysis has detected characteristics that may indicate a malignant (cancerous) lesion.</p>
+                        <div class="recommendation">
+                            <strong>📋 Recommendations:</strong><br>
+                            • Consult a dermatologist as soon as possible<br>
+                            • A skin biopsy is recommended to confirm the diagnosis<br>
+                            • Dermatoscopic examination is necessary
+                        </div>
+                    {% else %}
+                        <p><strong>Result: Benign lesion (Non-cancerous)</strong></p>
+                        <p>The AI analysis did not detect any suspicious characteristics.</p>
+                        <div class="recommendation">
+                            <strong>📋 Recommendations:</strong><br>
+                            • Regular monitoring of the lesion<br>
+                            • Consult if you notice changes (size, color, shape)<br>
+                            • Sun protection recommended
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if prob < 70 %}
+                <div class="interpretation" style="border-left-color: #ffc107; background: #fffbf0;">
+                    <h3>⚠️ Important Information</h3>
+                    <p>The AI confidence level is moderate (below 70%).</p>
+                    <p>A second analysis with a better quality image is recommended.</p>
+                </div>
+                {% endif %}
+
+                <div style="text-align: center;">
+                    <a href="/predict" class="btn btn-primary">🔬 New Analysis</a>
+                    <a href="/patients" class="btn btn-secondary">👥 Patients List</a>
+                    <a href="/dashboard" class="btn btn-success">📊 Dashboard</a>
+                </div>
+
+                <div class="disclaimer">
+                    <strong>⚠️ Medical Disclaimer</strong><br>
+                    This application uses AI as a diagnostic aid tool.<br>
+                    The result does not replace a professional medical diagnosis.<br>
+                    Always consult a dermatologist for medical advice.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.result-card, .interpretation');
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

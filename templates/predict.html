@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse Patient - Dermatologie IA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .header h1 span {
+            color: #667eea;
+        }
+
+        .back-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: #e0e0e0;
+            transform: translateX(-3px);
+        }
+
+        /* Carte principale */
+        .card {
+            background: white;
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Titres */
+        .card h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 .icon {
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .form-group label .required {
+            color: #dc3545;
+            margin-left: 4px;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon span {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #999;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Zone de dépôt d'image */
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            margin-bottom: 10px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f3ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #edeaff;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-area h3 {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .upload-area p {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .upload-area .file-info {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Aperçu de l'image */
+        .image-preview {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .image-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .image-preview .remove-image {
+            background: #fee2e2;
+            color: #dc3545;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        /* Bouton d'analyse */
+        .btn-analyze {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-analyze:active {
+            transform: translateY(0);
+        }
+
+        .btn-analyze:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border-left: 4px solid #dc3545;
+            color: #c82333;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .card {
+                padding: 25px;
+            }
+            
+            .card h2 {
+                font-size: 22px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏥 Cabinet Médical <span>Dermatologie</span></h1>
+            <a href="/dashboard" class="back-btn">← Retour au tableau de bord</a>
+        </div>
+
+        <!-- Carte principale -->
+        <div class="card">
+            <h2>
+                <span class="icon">🔬</span>
+                Nouvelle analyse dermatologique
+            </h2>
+            <p class="subtitle">Téléchargez une photo de la lésion cutanée pour une analyse par IA</p>
+
+            <!-- Messages flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{% if category == 'success' %}✅{% else %}⚠️{% endif %}</span>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            <!-- Formulaire -->
+            <form method="POST" enctype="multipart/form-data" id="analyzeForm">
+                <div class="form-group">
+                    <label>👤 Nom complet du patient <span class="required">*</span></label>
+                    <div class="input-icon">
+                        <span>📝</span>
+                        <input type="text" name="name" placeholder="Ex: Jean Dupont" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>🎂 Âge <span class="required">*</span></label>
+                    <div class="input-icon">
+                        <span>📅</span>
+                        <input type="text" name="age" placeholder="Ex: 45 ans" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>📸 Photo de la lésion <span class="required">*</span></label>
+                    
+                    <!-- Zone de dépôt -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📷</div>
+                        <h3>Cliquez ou glissez-déposez une image</h3>
+                        <p>Format acceptés : PNG, JPG, JPEG (max 16MB)</p>
+                        <div class="file-info" id="fileInfo">Aucun fichier sélectionné</div>
+                    </div>
+                    
+                    <input type="file" name="image" id="fileInput" accept="image/*" required>
+                    
+                    <!-- Aperçu -->
+                    <div class="image-preview" id="imagePreview">
+                        <img id="previewImg" src="#" alt="Aperçu">
+                        <button type="button" class="remove-image" id="removeImage">🗑 Supprimer</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-analyze" id="analyzeBtn">
+                    🔬 Lancer l'analyse IA
+                </button>
+            </form>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Analyse en cours...</p>
+                <p style="font-size: 12px; color: #999;">Le modèle VGG16 analyse l'image</p>
+            </div>
+
+            <!-- Information -->
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    🔬 Le modèle VGG16 analyse l'image pour détecter les signes de lésions<br>
+                    Résultat : <strong>Bénin</strong> (non cancéreux) ou <strong>Malin</strong> (cancéreux)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Éléments DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const removeImageBtn = document.getElementById('removeImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const form = document.getElementById('analyzeForm');
+
+        // Ouvrir la sélection de fichier
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag & drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileInfo(file);
+            }
+        });
+
+        // Sélection de fichier
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files.length > 0) {
+                updateFileInfo(fileInput.files[0]);
+            } else {
+                resetFileInfo();
+            }
+        });
+
+        function updateFileInfo(file) {
+            fileInfo.textContent = `✅ ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            fileInfo.style.color = '#28a745';
+            
+            // Aperçu
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadArea.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetFileInfo() {
+            fileInfo.textContent = 'Aucun fichier sélectionné';
+            fileInfo.style.color = '#667eea';
+            imagePreview.style.display = 'none';
+            uploadArea.style.display = 'block';
+            previewImg.src = '#';
+        }
+
+        removeImageBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            resetFileInfo();
+        });
+
+        // Submit avec loading
+        form.addEventListener('submit', (e) => {
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Veuillez sélectionner une image');
+                return;
+            }
+            
+            analyzeBtn.disabled = true;
+            analyzeBtn.style.opacity = '0.6';
+            loading.style.display = 'block';
+        });
+
+        // Animation au chargement
+        window.addEventListener('load', () => {
+            document.querySelector('.card').style.opacity = '1';
+        });
+    </script>
+</body>
+</html>

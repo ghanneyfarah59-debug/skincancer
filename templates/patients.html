@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Patients - Cabinet Médical</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .header h1 { color: #333; font-size: 24px; }
+        .header h1 span { color: #667eea; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .value { font-size: 32px; font-weight: bold; color: #667eea; }
+        .stat-card .label { color: #666; font-size: 14px; margin-top: 5px; }
+
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .table-responsive { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f8f9fa; }
+
+        .badge-malignant {
+            background: #fee2e2;
+            color: #dc3545;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge-benign {
+            background: #d4edda;
+            color: #28a745;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .no-data { text-align: center; padding: 50px; color: #999; }
+        .actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            th, td { padding: 10px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Cabinet Médical <span>Dermatologie</span></h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="/predict" class="btn btn-primary">🔬 Nouvelle analyse</a>
+                <a href="/dashboard" class="btn btn-secondary">📊 Tableau de bord</a>
+                <a href="/logout" class="btn btn-danger">🚪 Déconnexion</a>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="value">{{ patients|length }}</div>
+                <div class="label">Total patients</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ patients|selectattr('result', 'equalto', 'Benign')|list|length }}</div>
+                <div class="label">✅ Benign</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ patients|selectattr('result', 'equalto', 'Malignant')|list|length }}</div>
+                <div class="label">⚠️ Malignant</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">
+                    {% set total = namespace(value=0) %}
+                    {% set count = namespace(value=0) %}
+                    {% for p in patients %}
+                        {% if p.probability %}
+                            {% set total.value = total.value + p.probability %}
+                            {% set count.value = count.value + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if count.value > 0 %}
+                        {{ (total.value / count.value * 100)|round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </div>
+                <div class="label">Confiance moyenne</div>
+            </div>
+        </div>
+
+        <!-- Tableau -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Âge</th>
+                            <th>Résultat</th>
+                            <th>Confiance</th>
+                            <th>Image</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if patients and patients|length > 0 %}
+                            {% for p in patients %}
+                            <tr>
+                                <td>{{ p.id }}</td>
+                                <td><strong>{{ p.nom }}</strong></td>
+                                <td>{{ p.age }}</td>
+                                <td>
+                                    {% if p.result == 'Malignant' %}
+                                        <span class="badge-malignant">⚠️ Malignant</span>
+                                    {% else %}
+                                        <span class="badge-benign">✅ Benign</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.probability %}
+                                        {{ (p.probability * 100)|round(1) }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.image_path %}
+                                        <img src="/{{ p.image_path }}" class="thumbnail" onclick="window.open('/{{ p.image_path }}')">
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.created_at %}
+                                        {% if p.created_at is string %}
+                                            {{ p.created_at[:10] }}
+                                        else %}
+                                            {{ p.created_at.strftime('%Y-%m-%d') }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="no-data">
+                                    📋 Aucun patient enregistré
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="/predict" class="btn btn-primary">🔬 Nouvelle analyse</a>
+            <a href="/dashboard" class="btn btn-secondary">📊 Retour au tableau de bord</a>
+        </div>
+    </div>
+</body>
+</html>
